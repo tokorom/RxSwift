@@ -21,7 +21,6 @@ class TableViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     
     let paybacks = Variable([Payback]())
-    let tvdt = RxTableViewDelegate()
 
     override func viewDidLoad() {
         super.viewDidLoad()
