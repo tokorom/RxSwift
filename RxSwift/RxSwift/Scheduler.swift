@@ -8,19 +8,25 @@
 
 import Foundation
 
-public protocol ImmediateScheduler {
-    func schedule<StateType>(state: StateType, action: (StateType) -> RxResult<Void>) -> RxResult<Disposable>
-}
-
-public protocol Scheduler: ImmediateScheduler {
-    typealias TimeInterval
-    typealias Time
+public class Scheduler<TimeInterval, Time>: ImmediateScheduler {
     
     var now : Time {
-        get
+        get {
+            return abstractMethod()
+        }
+    }
+    
+    public init() {
+        
     }
 
-    func scheduleRelative<StateType>(state: StateType, dueTime: TimeInterval, action: (StateType) -> RxResult<Void>) -> RxResult<Disposable>
+    public func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+        return abstractMethod()
+    }
+    
+    public func scheduleRelative<StateType>(state: StateType, dueTime: TimeInterval, action: (Scheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+        return abstractMethod()
+    }
 }
 
 

@@ -59,7 +59,7 @@ class Sink<O : ObserverType> :  Disposable {
             
             _state.disposed = true
             _state.observer = nil
-            _state.cancel = DefaultDisposable()
+            _state.cancel = DefaultDisposable.Instance()
             
             return cancel
         }

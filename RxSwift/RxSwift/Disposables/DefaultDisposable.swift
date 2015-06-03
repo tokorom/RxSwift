@@ -8,9 +8,17 @@
 
 import Foundation
 
-public struct DefaultDisposable : Disposable {
+public class DefaultDisposable : Disposable {
  
-    public init() {
+    struct Internal {
+        static let instance = DefaultDisposable()
+    }
+    
+    public class func Instance() -> Disposable {
+        return Internal.instance
+    }
+    
+    init() {
         
     }
     

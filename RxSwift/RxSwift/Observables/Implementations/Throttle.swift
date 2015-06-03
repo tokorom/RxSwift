@@ -8,9 +8,10 @@
 
 import Foundation
 
-class Throttle_<O: ObserverType, SchedulerType: Scheduler> : Sink<O>, ObserverType {
+class Throttle_<O: ObserverType, TimeInterval, Time> : Sink<O>, ObserverType {
+    typealias SchedulerType = Scheduler<TimeInterval, Time>
     typealias Element = O.Element
-    typealias ParentType = Throttle<Element, SchedulerType>
+    typealias ParentType = Throttle<Element, TimeInterval, Time>
     
     typealias ThrottleState = (
         value: Element?,
@@ -86,7 +87,8 @@ class Throttle_<O: ObserverType, SchedulerType: Scheduler> : Sink<O>, ObserverTy
             let dueTime = self.parent.dueTime
             
             let _  = scheduler.scheduleRelative(latestId, dueTime: dueTime) { (id) in
-                return success(self.propagate())
+                self.propagate()
+                return success(DefaultDisposable.Instance())
             }.flatMap { disposeTimer -> RxResult<Void> in
                 d.setDisposable(disposeTimer)
                 return SuccessResult
@@ -114,13 +116,13 @@ class Throttle_<O: ObserverType, SchedulerType: Scheduler> : Sink<O>, ObserverTy
     }
 }
 
-class Throttle<Element, SchedulerType: Scheduler> : Producer<Element> {
+class Throttle<Element, TimeInterval, Time> : Producer<Element> {
     
     let source: Observable<Element>
-    let dueTime: SchedulerType.TimeInterval
-    let scheduler: SchedulerType
+    let dueTime: TimeInterval
+    let scheduler: Scheduler<TimeInterval, Time>
     
-    init(source: Observable<Element>, dueTime: SchedulerType.TimeInterval, scheduler: SchedulerType) {
+    init(source: Observable<Element>, dueTime: TimeInterval, scheduler: Scheduler<TimeInterval, Time>) {
         self.source = source
         self.dueTime = dueTime
         self.scheduler = scheduler

@@ -141,7 +141,7 @@ class ReplayBufferBase<Element> : ReplaySubjectImplementation<Element> {
         return lock.calculateLocked {
             if self.state.disposed {
                 sendError(observer, DisposedError)
-                return DefaultDisposable()
+                return DefaultDisposable.Instance()
             }
          
             let observerOf = ObserverOf(observer)
@@ -149,7 +149,7 @@ class ReplayBufferBase<Element> : ReplaySubjectImplementation<Element> {
             replayBuffer(observerOf)
             if let stoppedEvent = self.state.stoppedEvent {
                 observer.on(stoppedEvent)
-                return DefaultDisposable()
+                return DefaultDisposable.Instance()
             }
             else {
                 let key = self.state.observers.put(observerOf)

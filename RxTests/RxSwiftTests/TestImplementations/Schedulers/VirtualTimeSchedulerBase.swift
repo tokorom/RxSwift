@@ -13,10 +13,9 @@ protocol ScheduledItem {
     
 }
 
-class VirtualTimeSchedulerBase : Scheduler, Printable {
-    typealias Time = Int
-    typealias TimeInterval = Int
-    
+typealias VirtualTimeSchedulerBase = VirtualTimeSchedulerBase_<Void>
+
+class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
     typealias ScheduledItem = (() -> RxResult<Void>, AnyObject, Int, time: Int)
     
     var clock : Time
@@ -40,27 +39,35 @@ class VirtualTimeSchedulerBase : Scheduler, Printable {
     init(initialClock: Time) {
         self.clock = initialClock
         self.enabled = false
+        super.init()
     }
     
-    func schedule<StateType>(state: StateType, action: (StateType) -> RxResult<Void>) -> RxResult<Disposable> {
-        return self.scheduleRelative(state, dueTime: 0, action: action)
+    override func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+        return self.scheduleRelative(state, dueTime: 0) { s, a in
+            return action(s, a)
+        }
     }
     
-    func scheduleRelative<StateType>(state: StateType, dueTime: TimeInterval, action: (StateType) -> RxResult<Void>) -> RxResult<Disposable> {
+    override func scheduleRelative<StateType>(state: StateType, dueTime: Int, action: (Scheduler<Int, Int>, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         return schedule(state, time: now + dueTime, action: action)
     }
     
-    func schedule<StateType>(state: StateType, time: Time, action: (StateType) -> RxResult<Void>) -> RxResult<Disposable> {
+    func schedule<StateType>(state: StateType, time: Int, action: (Scheduler<Int, Int>, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         let latestID = self.ID
         ID = ID &+ 1
         
+        let compositeDisposable = CompositeDisposable()
+        
         let actionDescription : ScheduledItem = ({
-            return action(state)
+            return action(self, state).map { disposable in
+                compositeDisposable.addDisposable(disposable)
+                return ()
+            }
         }, RxBox(state), latestID, time)
         
         schedulerQueue.append(actionDescription)
         
-        return success(AnonymousDisposable {
+        compositeDisposable.addDisposable(AnonymousDisposable {
             var index : Int = 0
             
             for (_, _, id, _) in self.schedulerQueue {
@@ -72,6 +79,8 @@ class VirtualTimeSchedulerBase : Scheduler, Printable {
                 index++
             }
         })
+        
+        return success(compositeDisposable)
     }
     
     func start() {

@@ -19,7 +19,7 @@ public func create<E>(subscribe: (ObserverOf<E>) -> Disposable) -> Observable<E>
 public func empty<E>() -> Observable<E> {
     return AnonymousObservable { observer in
         sendCompleted(observer)
-        return DefaultDisposable()
+        return DefaultDisposable.Instance()
     }
 }
 
@@ -27,7 +27,7 @@ public func empty<E>() -> Observable<E> {
 
 public func never<E>() -> Observable<E> {
     return AnonymousObservable { observer in
-        return DefaultDisposable()
+        return DefaultDisposable.Instance()
     }
 }
 
@@ -37,7 +37,7 @@ public func returnElement<E>(value: E) -> Observable<E> {
     return AnonymousObservable { observer in
         sendNext(observer, value)
         sendCompleted(observer)
-        return DefaultDisposable()
+        return DefaultDisposable.Instance()
     }
 }
 
@@ -52,7 +52,7 @@ public func returnElements<E>(values: E ...) -> Observable<E> {
         }
         
         sendCompleted(observer)
-        return DefaultDisposable()
+        return DefaultDisposable.Instance()
     }
 }
 
@@ -61,7 +61,7 @@ public func returnElements<E>(values: E ...) -> Observable<E> {
 public func failWith<E>(error: ErrorType) -> Observable<E> {
     return AnonymousObservable { observer in
         sendError(observer, error)
-        return DefaultDisposable()
+        return DefaultDisposable.Instance()
     }
 }
 

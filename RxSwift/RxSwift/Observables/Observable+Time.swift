@@ -10,8 +10,8 @@ import Foundation
 
 // throttle
 
-public func throttle<E, S: Scheduler>
-    (dueTime: S.TimeInterval, scheduler: S)
+public func throttle<E, TimeInterval, Time>
+    (dueTime: TimeInterval, scheduler: Scheduler<TimeInterval, Time>)
     -> (Observable<E> -> Observable<E>) {
     return { source in
         return Throttle(source: source, dueTime: dueTime, scheduler: scheduler)

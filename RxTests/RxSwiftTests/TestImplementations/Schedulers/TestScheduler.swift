@@ -9,27 +9,34 @@
 import Foundation
 import RxSwift
 
-class TestScheduler : VirtualTimeSchedulerBase {
+typealias TestScheduler = TestScheduler_<Void>
+
+class TestScheduler_<__> : VirtualTimeSchedulerBase_<Void> {
+    
+    override init(initialClock: Time) {
+        super.init(initialClock: initialClock)
+    }
+    
     func advanceTimeFor(interval: Time) {
         
     }
     
     func createHotObservable<Element>(events: [Recorded<Element>]) -> HotObservable<Element> {
-        return HotObservable(testScheduler: self, recordedEvents: events)
+        return HotObservable(testScheduler: self as AnyObject as! TestScheduler, recordedEvents: events)
     }
     
     func createColdObservable<Element>(events: [Recorded<Element>]) -> ColdObservable<Element> {
-        return ColdObservable(testScheduler: self, recordedEvents: events)
+        return ColdObservable(testScheduler: self as AnyObject as! TestScheduler, recordedEvents: events)
     }
     
     func createObserver<E>() -> MockObserver<E> {
-        return MockObserver(scheduler: self)
+        return MockObserver(scheduler: self as AnyObject as! TestScheduler)
     }
     
     func scheduleAt(time: Time, action: () -> Void) {
         self.schedule((), time: time) { _ in
             action()
-            return SuccessResult
+            return success(DefaultDisposable.Instance())
         }
     }
     
@@ -42,17 +49,17 @@ class TestScheduler : VirtualTimeSchedulerBase {
         
         self.schedule(state, time: created) { (state) in
             source = create()
-            return SuccessResult
+            return success(DefaultDisposable.Instance())
         }
         
         self.schedule(state, time: subscribed) { (state) in
             subscription = source!.subscribe(observer)
-            return SuccessResult
+            return success(DefaultDisposable.Instance())
         }
         
         self.schedule(state, time: disposed) { (state) in
             subscription!.dispose()
-            return SuccessResult
+            return success(DefaultDisposable.Instance())
         }
 
         start()
