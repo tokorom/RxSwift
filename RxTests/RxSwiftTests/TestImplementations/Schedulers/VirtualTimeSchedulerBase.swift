@@ -9,19 +9,47 @@
 import Foundation
 import RxSwift
 
-protocol ScheduledItem {
-    
-}
-
 typealias VirtualTimeSchedulerBase = VirtualTimeSchedulerBase_<Void>
 
+protocol ScheduledItemProtocol : Cancelable {
+    var time: Int {
+        get
+    }
+    
+    func invoke(scheduler: Scheduler<Int, Int>) -> RxResult<Disposable>
+}
+
+class ScheduledItem<T> : ScheduledItemProtocol {
+    typealias Action = (/*Scheduler<Int, Int>,*/ T) -> RxResult<Disposable>
+    
+    let action: Action
+    let state: T
+    let time: Int
+    
+    var disposed = false
+    
+    init(action: Action, state: T, time: Int) {
+        self.action = action
+        self.state = state
+        self.time = time
+    }
+    
+    func invoke(scheduler: Scheduler<Int, Int>) -> RxResult<Disposable> {
+        return action(/*scheduler,*/ state)
+    }
+    
+    func dispose() {
+        self.disposed = true
+    }
+}
+
+
 class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
-    typealias ScheduledItem = (() -> RxResult<Void>, AnyObject, Int, time: Int)
     
     var clock : Time
     var enabled : Bool
     
-    var now: Time {
+    override var now: Time {
         get {
             return self.clock
         }
@@ -33,8 +61,7 @@ class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
         }
     }
     
-    private var schedulerQueue : [ScheduledItem] = []
-    private var ID : Int = 0
+    private var schedulerQueue : [ScheduledItemProtocol] = []
     
     init(initialClock: Time) {
         self.clock = initialClock
@@ -42,43 +69,25 @@ class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
         super.init()
     }
     
-    override func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
-        return self.scheduleRelative(state, dueTime: 0) { s, a in
-            return action(s, a)
+    override func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+        return self.scheduleRelative(state, dueTime: 0) { /*s,*/ a in
+            return action(/*s,*/ a)
         }
     }
     
-    override func scheduleRelative<StateType>(state: StateType, dueTime: Int, action: (Scheduler<Int, Int>, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    override func scheduleRelative<StateType>(state: StateType, dueTime: Int, action: (/*Scheduler<Int, Int>,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         return schedule(state, time: now + dueTime, action: action)
     }
     
-    func schedule<StateType>(state: StateType, time: Int, action: (Scheduler<Int, Int>, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
-        let latestID = self.ID
-        ID = ID &+ 1
-        
+    func schedule<StateType>(state: StateType, time: Int, action: (/*Scheduler<Int, Int>,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         let compositeDisposable = CompositeDisposable()
         
-        let actionDescription : ScheduledItem = ({
-            return action(self, state).map { disposable in
-                compositeDisposable.addDisposable(disposable)
-                return ()
-            }
-        }, RxBox(state), latestID, time)
+        println(time)
+        let item =  ScheduledItem(action: action, state: state, time: time)
         
-        schedulerQueue.append(actionDescription)
+        schedulerQueue.append(item)
         
-        compositeDisposable.addDisposable(AnonymousDisposable {
-            var index : Int = 0
-            
-            for (_, _, id, _) in self.schedulerQueue {
-                if id == latestID {
-                    self.schedulerQueue.removeAtIndex(index)
-                    return
-                }
-                
-                index++
-            }
-        })
+        compositeDisposable.addDisposable(item)
         
         return success(compositeDisposable)
     }
@@ -88,11 +97,15 @@ class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
             enabled = true
             do {
                 if let next = getNext() {
+                    if next.disposed {
+                        continue
+                    }
+                    
                     if next.time > self.now {
                         self.clock = next.time
                     }
 
-                    (next.0)()
+                    next.invoke(self)
                 }
                 else {
                     enabled = false;
@@ -102,9 +115,9 @@ class VirtualTimeSchedulerBase_<__> : Scheduler<Int, Int>, Printable {
         }
     }
     
-    func getNext() -> ScheduledItem? {
+    func getNext() -> ScheduledItemProtocol? {
         var minDate = Time.max
-        var minElement : ScheduledItem? = nil
+        var minElement : ScheduledItemProtocol? = nil
         var minIndex = -1
         var index = 0
         

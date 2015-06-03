@@ -33,7 +33,7 @@ public class MainScheduler_<__> : DispatchQueueScheduler {
         }
     }
     
-    public override func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public override func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         if NSThread.currentThread().isMainThread {
             return currentScheduler.schedule(state, action: action)
         }

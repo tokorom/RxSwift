@@ -10,5 +10,5 @@ import Foundation
 
 
 public protocol ImmediateScheduler {
-    func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable>
+    func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable>
 }

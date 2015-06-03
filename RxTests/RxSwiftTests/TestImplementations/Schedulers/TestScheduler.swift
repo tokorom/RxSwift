@@ -11,6 +11,19 @@ import RxSwift
 
 typealias TestScheduler = TestScheduler_<Void>
 
+
+func createHotObservable<Element>(scheduler: TestScheduler, events: [Recorded<Element>]) -> HotObservable<Element> {
+    return HotObservable(testScheduler: scheduler, recordedEvents: events)
+}
+
+func createColdObservable<Element>(scheduler: TestScheduler, events: [Recorded<Element>]) -> ColdObservable<Element> {
+    return ColdObservable(testScheduler: scheduler, recordedEvents: events)
+}
+
+func createObserver<E>(scheduler: TestScheduler) -> MockObserver<E> {
+    return MockObserver(scheduler: scheduler)
+}
+
 class TestScheduler_<__> : VirtualTimeSchedulerBase_<Void> {
     
     override init(initialClock: Time) {

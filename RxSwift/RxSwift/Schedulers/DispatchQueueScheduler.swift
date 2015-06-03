@@ -21,13 +21,19 @@ public typealias DispatchQueueScheduler = DispatchQueueScheduler_<Void>
 public class DispatchQueueScheduler_<__> : Scheduler<NSTimeInterval, NSDate> {
     private let serialQueue : dispatch_queue_t
     
+    public override var now : NSDate {
+        get {
+            return NSDate()
+        }
+    }
+    
     init(serialQueue: dispatch_queue_t) {
         self.serialQueue = serialQueue
     }
     
     // Creates new serial queue named `name` for internal scheduler usage
-    public convenience init(name: String, serialQueueConfiguration: (dispatch_queue_t) -> Void) {
-        let queue = dispatch_queue_create(name, DISPATCH_QUEUE_SERIAL)
+    public convenience init(internalSerialQueueName: String, serialQueueConfiguration: (dispatch_queue_t) -> Void) {
+        let queue = dispatch_queue_create(internalSerialQueueName, DISPATCH_QUEUE_SERIAL)
         serialQueueConfiguration(queue)
         self.init(serialQueue: queue)
     }
@@ -49,17 +55,11 @@ public class DispatchQueueScheduler_<__> : Scheduler<NSTimeInterval, NSDate> {
         self.init(queue: dispatch_get_global_queue(priority, UInt(0)), internalSerialQueueName: internalSerialQueueName)
     }
     
-    public override var now : NSDate {
-        get {
-            return NSDate()
-        }
-    }
-    
     class func convertTimeIntervalToDispatchTime(timeInterval: NSTimeInterval) -> dispatch_time_t {
         return dispatch_time(DISPATCH_TIME_NOW, Int64(timeInterval * Double(NSEC_PER_SEC) / 1000))
     }
     
-    public override func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public override func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         let cancel = SingleAssignmentDisposable()
         
         dispatch_async(self.serialQueue) {
@@ -67,7 +67,7 @@ public class DispatchQueueScheduler_<__> : Scheduler<NSTimeInterval, NSDate> {
                 return
             }
             
-            _ = ensureScheduledSuccessfully(action(self, state).map { disposable in
+            _ = ensureScheduledSuccessfully(action(/*self,*/ state).map { disposable in
                 cancel.setDisposable(disposable)
             })
         }
@@ -75,7 +75,7 @@ public class DispatchQueueScheduler_<__> : Scheduler<NSTimeInterval, NSDate> {
         return success(cancel)
     }
     
-    public override func scheduleRelative<StateType>(state: StateType, dueTime: NSTimeInterval, action: (Scheduler<NSTimeInterval, NSDate>, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public override func scheduleRelative<StateType>(state: StateType, dueTime: NSTimeInterval, action: (/*Scheduler<NSTimeInterval, NSDate>,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         let timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.serialQueue)
         
         let dispatchInterval = MainScheduler.convertTimeIntervalToDispatchTime(dueTime)
@@ -87,7 +87,7 @@ public class DispatchQueueScheduler_<__> : Scheduler<NSTimeInterval, NSDate> {
             if compositeDisposable.disposed {
                 return
             }
-            ensureScheduledSuccessfully(action(self, state).map { disposable in
+            ensureScheduledSuccessfully(action(/*self,*/ state).map { disposable in
                 compositeDisposable.addDisposable(disposable)
             })
         })

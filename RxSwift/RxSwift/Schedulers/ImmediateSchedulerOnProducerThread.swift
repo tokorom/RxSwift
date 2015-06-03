@@ -17,7 +17,7 @@ protocol WorkItemProtocol {
 }
 
 class WorkItem<T> : WorkItemProtocol, Disposable {
-    typealias Action = (ImmediateScheduler, T) -> RxResult<Disposable>
+    typealias Action = (/*ImmediateScheduler,*/ T) -> RxResult<Disposable>
     
     var state: T!
     var action: Action!
@@ -36,7 +36,7 @@ class WorkItem<T> : WorkItemProtocol, Disposable {
     }
     
     func invoke(scheduler: ImmediateScheduler) -> RxResult<Void> {
-        return action(scheduler, state).map { chainedDisposable in
+        return action(/*scheduler,*/ state).map { chainedDisposable in
             self.disposable.setDisposable(disposable)
             return ()
         }
@@ -56,7 +56,7 @@ class TailCallOptimizationAdapter : ImmediateScheduler {
         self.enqueueItem = enqueueItem
     }
     
-    func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         let item = WorkItem(state: state, action: action)
         enqueueItem.put(item)
         return success(item)
@@ -64,7 +64,7 @@ class TailCallOptimizationAdapter : ImmediateScheduler {
 }
 
 public struct ImmediateSchedulerOnProducerThread : ImmediateScheduler {
-    public func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         var stop = false
 
         var queue = Queue<WorkItemProtocol>(capacity: 4)

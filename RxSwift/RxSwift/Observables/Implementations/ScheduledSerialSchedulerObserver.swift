@@ -19,7 +19,7 @@ class ScheduledSerialSchedulerObserver<O: ObserverType> : ObserverBase<O.Element
     }
 
     override func onCore(event: Event<Element>) {
-        self.scheduler.schedule(()) { (_, _) -> RxResult<Disposable> in
+        self.scheduler.schedule(()) { (_) -> RxResult<Disposable> in
             
             return success(DefaultDisposable.Instance())
         }

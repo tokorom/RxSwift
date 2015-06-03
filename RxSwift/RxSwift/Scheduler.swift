@@ -8,9 +8,13 @@
 
 import Foundation
 
+// Abstract base class for schedulers.
+//
+// Oh joy, swift compiler doesn't know how to pass self into callback correctly.
+// It will compile, but generates code that you don't want to execute.
 public class Scheduler<TimeInterval, Time>: ImmediateScheduler {
     
-    var now : Time {
+    public var now : Time {
         get {
             return abstractMethod()
         }
@@ -20,11 +24,11 @@ public class Scheduler<TimeInterval, Time>: ImmediateScheduler {
         
     }
 
-    public func schedule<StateType>(state: StateType, action: (ImmediateScheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public func schedule<StateType>(state: StateType, action: (/*ImmediateScheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         return abstractMethod()
     }
     
-    public func scheduleRelative<StateType>(state: StateType, dueTime: TimeInterval, action: (Scheduler, StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
+    public func scheduleRelative<StateType>(state: StateType, dueTime: TimeInterval, action: (/*Scheduler,*/ StateType) -> RxResult<Disposable>) -> RxResult<Disposable> {
         return abstractMethod()
     }
 }
