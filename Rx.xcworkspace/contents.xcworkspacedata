@@ -7,9 +7,6 @@
    <FileRef
       location = "group:README.md">
    </FileRef>
-   <FileRef
-      location = "group:_.xcodeproj">
-   </FileRef>
    <Group
       location = "group:Playgrounds"
       name = "Playgrounds">
@@ -56,9 +53,6 @@
    </FileRef>
    <FileRef
       location = "group:RxTests/RxTests.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:Preprocessor/Preprocessor.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:RxExample/RxExample.xcodeproj">
